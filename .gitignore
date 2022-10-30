@@ -11,6 +11,10 @@ artifacts
 
 # macOS
 .DS_Store
+.DS_Store?
 
 # ignore openzepplin folder
-.openzeppelin/
+.openzeppelin/unknown-31337.json
+
+yarn.lock
+yarn-error.log
