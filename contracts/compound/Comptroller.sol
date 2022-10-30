@@ -312,15 +312,12 @@ contract Comptroller is
         uint256 mintAmount
     ) external override returns (uint256) {
         // Pausing is a very serious situation - we revert to sound the alarms
-        console.log("inside mintAllowed");
         require(!mintGuardianPaused[cToken], "mint is paused");
 
         // Shh - currently unused
         minter;
         mintAmount;
 
-        console.log("cToken: ", cToken);
-        console.log("listed: ", markets[cToken].isListed);
         if (!markets[cToken].isListed) {
             return uint256(Error.MARKET_NOT_LISTED);
         }

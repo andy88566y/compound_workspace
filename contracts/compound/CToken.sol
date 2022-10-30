@@ -512,7 +512,6 @@ abstract contract CToken is
         // mintFresh emits the actual Mint event if successful and logs on errors, so we don't need to
         // 下面這行出問題
         mintFresh(msg.sender, mintAmount);
-        console.log("4 ?");
     }
 
     /**
@@ -528,17 +527,13 @@ abstract contract CToken is
             minter,
             mintAmount
         );
-        console.log("allowed?");
-        console.log(allowed, minter, mintAmount);
         if (allowed != 0) {
             revert MintComptrollerRejection(allowed);
         }
-        console.log("??");
         /* Verify market's block number equals current block number */
         if (accrualBlockNumber != getBlockNumber()) {
             revert MintFreshnessCheck();
         }
-        console.log("123");
         Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
 
         /////////////////////////
@@ -554,7 +549,6 @@ abstract contract CToken is
          *  of cash.
          */
         uint256 actualMintAmount = doTransferIn(minter, mintAmount);
-        console.log("actualMintAmount");
         /*
          * We get the current exchange rate and calculate the number of cTokens to be minted:
          *  mintTokens = actualMintAmount / exchangeRate

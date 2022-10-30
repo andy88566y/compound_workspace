@@ -10,8 +10,6 @@ async function main() {
 	const GCDToken = await ethers.getContractFactory("GCDToken");
 	const gcdToken = await upgrades.deployProxy(GCDToken);
 	await gcdToken.deployed();
-
-	console.log(`GCDToken Deployed to ${gcdToken.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
