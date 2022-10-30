@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// generated from https://wizard.openzeppelin.com/
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
@@ -9,6 +10,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/draft-ERC20Pe
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+// https://hardhat.org/tutorial/debugging-with-hardhat-network
+import "hardhat/console.sol";
 
 /// @custom:security-contact andy88566y@gmail.com
 contract GCDToken is
