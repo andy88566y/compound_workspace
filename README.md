@@ -17,4 +17,4 @@ npx hardhat test
 ```
 
 應該會看到如圖結果
-https://i.imgur.com/RvH0ZR0.png
+![test pass](https://i.imgur.com/RvH0ZR0.png)
