@@ -1,13 +1,20 @@
-# Sample Hardhat Project
+# Compound Practice Project
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+for HW week 11
 
-Try running some of the following tasks:
+1. set up .env file like this
+
+```
+ETHERSCAN_API_KEY=SAMPLE_API_KEY
+URL=alchemyapi/endpoint
+```
+
+2.
 
 ```shell
-npx hardhat help
+npm install
 npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
 ```
+
+應該會看到如圖結果
+https://i.imgur.com/RvH0ZR0.png
