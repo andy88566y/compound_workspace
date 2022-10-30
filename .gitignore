@@ -9,3 +9,8 @@ typechain-types
 cache
 artifacts
 
+# macOS
+.DS_Store
+
+# ignore openzepplin folder
+.openzeppelin/
