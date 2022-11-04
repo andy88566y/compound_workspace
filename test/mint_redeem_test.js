@@ -16,13 +16,16 @@ const {
 } = require("./setup");
 
 describe("CErc20", async function () {
-	it("should be able to mint CErc20 with GCDToken and reddem back", async function () {
-		const [owner, user] = await ethers.getSigners();
+	beforeEach(async function () {
+		// deploy contracts
 		comptroller = await deployComptroller();
 		gcdToken = await deployGcdToken();
 		interestRateModel = await deployInterestRateModel();
 		cErc20 = await deployCErc20();
+	});
 
+	it("should be able to mint CErc20 with GCDToken and reddem back", async function () {
+		const [owner, user] = await ethers.getSigners();
 		// 在 GCDToken.sol 本來就有寫先給 owner 100 GCDToken
 		await expect(await gcdToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
 		// 設定 user 有 1000 GCDToken
