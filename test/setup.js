@@ -8,12 +8,12 @@ async function deployComptroller() {
 	return comptroller;
 }
 
-async function deployGcdToken() {
-	// deploy ERC20 GCDToken
-	const GCDToken = await ethers.getContractFactory("GCDToken");
-	const gcdToken = await upgrades.deployProxy(GCDToken);
-	await gcdToken.deployed();
-	return gcdToken;
+async function deployToken(name) {
+	// deploy ERC20 nameToken
+	const Token = await ethers.getContractFactory(name);
+	const token = await upgrades.deployProxy(Token);
+	await token.deployed();
+	return token;
 }
 
 async function deployInterestRateModel() {
@@ -29,26 +29,26 @@ async function deployInterestRateModel() {
 	return interestRateModel;
 }
 
-async function deployCErc20() {
+async function deployCToken(token) {
 	const [owner] = await ethers.getSigners();
 	const cErc20Factory = await ethers.getContractFactory("CErc20Immutable");
-	const cErc20 = await cErc20Factory.deploy(
-		gcdToken.address,
+	const cCat = await cErc20Factory.deploy(
+		token.address,
 		comptroller.address,
 		interestRateModel.address,
 		ethers.utils.parseUnits("1", 18),
-		"c GCD Token",
-		"GCD",
+		token.name,
+		token.symbol,
 		18,
 		owner.address
 	);
-	await cErc20.deployed();
-	return cErc20;
+	await cCat.deployed();
+	return cCat;
 }
 
 module.exports = {
 	deployComptroller,
-	deployGcdToken,
+	deployCToken,
 	deployInterestRateModel,
-	deployCErc20,
+	deployToken,
 };

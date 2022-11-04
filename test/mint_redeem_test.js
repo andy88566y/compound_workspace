@@ -9,60 +9,63 @@ const { ethers } = require("hardhat");
 const DECIMAL = 10n ** 18n;
 
 const {
+	deployToken,
 	deployComptroller,
-	deployGcdToken,
 	deployInterestRateModel,
-	deployCErc20,
+	deployCToken,
 } = require("./setup");
 
 describe("CErc20", async function () {
 	beforeEach(async function () {
 		// deploy contracts
-		gcdToken = await deployGcdToken();
+		catToken = await deployToken("CatToken");
+		dragonToken = await deployToken("DragonToken");
 		comptroller = await deployComptroller();
 		interestRateModel = await deployInterestRateModel();
-		cErc20 = await deployCErc20();
-		comptroller._supportMarket(cErc20.address);
+		cCat = await deployCToken(catToken);
+		cDragon = await deployCToken(dragonToken);
+		comptroller._supportMarket(cCat.address);
+		comptroller._supportMarket(cDragon.address);
 	});
 
-	it("should be able to mint CErc20 with GCDToken and reddem back", async function () {
+	it("should be able to mint cCat with catToken and reddem back", async function () {
 		const [owner, user] = await ethers.getSigners();
-		// 在 GCDToken.sol 本來就有寫先給 owner 100 GCDToken
-		await expect(await gcdToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
-		// 設定 user 有 1000 GCDToken
-		await gcdToken.mint(user.address, ethers.utils.parseUnits("1000", 18));
-		await expect(await gcdToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
+		// 在 CatToken.sol 本來就有寫先給 owner 100 catTokens
+		await expect(await catToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
+		// 設定 user 有 1000 catToken
+		await catToken.mint(user.address, ethers.utils.parseUnits("1000", 18));
+		await expect(await catToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
 
-		// GCDToken approve cErc20 use
-		await gcdToken
+		// catToken approve cCat use
+		await catToken
 			.connect(user)
-			.approve(cErc20.address, ethers.utils.parseUnits("100", 18));
-		// user use 100 GCDToken to mint 100 cErc20
+			.approve(cCat.address, ethers.utils.parseUnits("100", 18));
+		// user use 100 catToken to mint 100 cCat
 		await expect(
-			cErc20.connect(user).mint(ethers.utils.parseUnits("100", 18))
+			cCat.connect(user).mint(ethers.utils.parseUnits("100", 18))
 		).to.changeTokenBalances(
-			cErc20,
+			cCat,
 			[user.address],
 			[ethers.utils.parseUnits("100", 18)]
 		);
 
-		// user has 1000 - 100 = 900 GCDTokens left
-		await expect(await gcdToken.balanceOf(user.address)).to.eq(900n * DECIMAL);
+		// user has 1000 - 100 = 900 catTokens left
+		await expect(await catToken.balanceOf(user.address)).to.eq(900n * DECIMAL);
 		// user has 100 cToken
-		await expect(await cErc20.balanceOf(user.address)).to.eq(100n * DECIMAL);
+		await expect(await cCat.balanceOf(user.address)).to.eq(100n * DECIMAL);
 
 		// user use 100 cErc20 to redeem 100 erc20
 		await expect(
-			cErc20.connect(user).redeem(ethers.utils.parseUnits("100", 18))
+			cCat.connect(user).redeem(ethers.utils.parseUnits("100", 18))
 		).to.changeTokenBalances(
-			cErc20,
+			cCat,
 			[user.address],
 			[ethers.utils.parseUnits("-100", 18)]
 		);
 
 		// user has 900 + 100 = 1000 GCDTokens
-		await expect(await gcdToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
+		await expect(await catToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
 		// user has 0 cToken
-		await expect(await cErc20.balanceOf(user.address)).to.eq(0n * DECIMAL);
+		await expect(await cCat.balanceOf(user.address)).to.eq(0n * DECIMAL);
 	});
 });

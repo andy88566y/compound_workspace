@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "hardhat/console.sol";
 
 /// @custom:security-contact andy88566y@gmail.com
-contract GCDToken is
+contract CatToken is
     Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
@@ -30,11 +30,11 @@ contract GCDToken is
     }
 
     function initialize() public initializer {
-        __ERC20_init("GCDToken", "GCD");
+        __ERC20_init("CatToken", "CAT");
         __ERC20Burnable_init();
         __Pausable_init();
         __Ownable_init();
-        __ERC20Permit_init("GCDToken");
+        __ERC20Permit_init("CatToken");
         __ERC20Votes_init();
         __UUPSUpgradeable_init();
 
