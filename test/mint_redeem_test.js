@@ -18,10 +18,11 @@ const {
 describe("CErc20", async function () {
 	beforeEach(async function () {
 		// deploy contracts
-		comptroller = await deployComptroller();
 		gcdToken = await deployGcdToken();
+		comptroller = await deployComptroller();
 		interestRateModel = await deployInterestRateModel();
 		cErc20 = await deployCErc20();
+		comptroller._supportMarket(cErc20.address);
 	});
 
 	it("should be able to mint CErc20 with GCDToken and reddem back", async function () {
@@ -31,11 +32,6 @@ describe("CErc20", async function () {
 		// 設定 user 有 1000 GCDToken
 		await gcdToken.mint(user.address, ethers.utils.parseUnits("1000", 18));
 		await expect(await gcdToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
-
-		//'MintComptrollerRejection(9)'
-		await expect(comptroller._supportMarket(cErc20.address))
-			.to.emit(comptroller, "MarketListed")
-			.withArgs(cErc20.address);
 
 		// GCDToken approve cErc20 use
 		await gcdToken
