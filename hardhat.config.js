@@ -25,12 +25,6 @@ module.exports = {
 		apiKey: ETHERSCAN_API_KEY,
 	},
 	networks: {
-		hardhat: {
-			forking: {
-				url: URL,
-				blockNumber: 15818135,
-				enabled: true,
-			},
-		},
+		hardhat: {},
 	},
 };
