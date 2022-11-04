@@ -8,41 +8,20 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const DECIMAL = 10n ** 18n;
 
+const {
+	deployComptroller,
+	deployGcdToken,
+	deployInterestRateModel,
+	deployCErc20,
+} = require("./setup");
+
 describe("CErc20", async function () {
 	it("should be able to mint CErc20 with GCDToken and reddem back", async function () {
 		const [owner, user] = await ethers.getSigners();
-		// deploy Comptroller
-		const comptrollerFactory = await ethers.getContractFactory("Comptroller");
-		const comptroller = await comptrollerFactory.deploy();
-		await comptroller.deployed();
-
-		// deploy ERC20 GCDToken
-		const GCDToken = await ethers.getContractFactory("GCDToken");
-		const gcdToken = await upgrades.deployProxy(GCDToken);
-		await gcdToken.deployed();
-
-		// deploy interest rate model
-		const interestRateModelFactory = await ethers.getContractFactory(
-			"WhitePaperInterestRateModel"
-		);
-		const interestRateModel = await interestRateModelFactory.deploy(
-			ethers.utils.parseUnits("0", 18),
-			ethers.utils.parseUnits("0", 18)
-		);
-		await interestRateModel.deployed();
-
-		const cErc20Factory = await ethers.getContractFactory("CErc20Immutable");
-		const cErc20 = await cErc20Factory.deploy(
-			gcdToken.address,
-			comptroller.address,
-			interestRateModel.address,
-			ethers.utils.parseUnits("1", 18),
-			"c GCD Token",
-			"GCD",
-			18,
-			owner.address
-		);
-		await cErc20.deployed();
+		comptroller = await deployComptroller();
+		gcdToken = await deployGcdToken();
+		interestRateModel = await deployInterestRateModel();
+		cErc20 = await deployCErc20();
 
 		// 在 GCDToken.sol 本來就有寫先給 owner 100 GCDToken
 		await expect(await gcdToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
