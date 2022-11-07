@@ -116,6 +116,16 @@ describe("Borrow / repayBorrow", async function () {
 		await comptroller
 			.connect(user1)
 			.enterMarkets([cCat.address, cDragon.address]);
+		// 設定 CloseFactor 最高可清算比例 50%
+		await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
+
+		// 設定清算人的激勵費 10%，這是清算者從被清算者身上拿的
+		// 獎勵 10% 要寫成 110%
+		// LiquidationIncentive to determine how much collateral can be seized.
+		// 所以要寫成 110%
+		await comptroller._setLiquidationIncentive(
+			ethers.utils.parseUnits("1.1", 18)
+		);
 	});
 
 	it("should User1 使用 dragonToken 作為抵押品來借出 50 顆 catTokens", async function () {
@@ -132,7 +142,7 @@ describe("Borrow / repayBorrow", async function () {
 	});
 
 	// 調整 token A 的 collateral factor，讓 user1 被 user2 清算
-	describe("when collateral factor of CatToken changes", async function () {
+	describe("when collateral factor of catToken changes", async function () {
 		it("user2 can liquidated user1", async function () {
 			const [, user1, user2] = await ethers.getSigners();
 			// user1 借了 50 CatToken
@@ -141,17 +151,6 @@ describe("Borrow / repayBorrow", async function () {
 			await comptroller._setCollateralFactor(
 				cDragon.address,
 				NEW_COLLATERAL_FACTOR
-			);
-
-			// 設定 CloseFactor 最高可清算比例 50%
-			await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
-
-			// 設定清算人的激勵費 10%，這是清算者從被清算者身上拿的
-			// 獎勵 10% 要寫成 110%
-			// LiquidationIncentive to determine how much collateral can be seized.
-			// 所以要寫成 110%
-			await comptroller._setLiquidationIncentive(
-				ethers.utils.parseUnits("1.1", 18)
 			);
 
 			// user2 準備幫 user1 還 CatToken
@@ -178,6 +177,46 @@ describe("Borrow / repayBorrow", async function () {
 			const user2cDragonBalance = await cDragon.balanceOf(user2.address);
 			expect(user2cDragonBalance).to.equal(
 				ethers.utils.parseUnits("0.2673", 18)
+			);
+		});
+	});
+
+	// 調整 oracle 中的 token B 的價格，讓 user1 被 user2 清算
+	describe("when price of dragonToken changes", async function () {
+		it("user2 can liquidated user1", async function () {
+			const [, user1, user2] = await ethers.getSigners();
+			// user1 借了 50 CatToken
+			await cCat.connect(user1).borrow(50n * DECIMAL);
+			// 重設 dragon price ， 從 $100 --> $50
+			await priceOracle.setUnderlyingPrice(cDragon.address, 50n * DECIMAL);
+
+			// user2 準備幫 user1 還 CatToken
+			await catToken.mint(user2.address, ethers.utils.parseUnits("100", 18));
+			await catToken.connect(user2).approve(cCat.address, 25n * DECIMAL);
+
+			// user2 幫 user1 還一半 CatToken
+			await cCat
+				.connect(user2)
+				.liquidateBorrow(user1.address, 25n * DECIMAL, cDragon.address);
+
+			// user2 原本有 100 CatToken 幫 user1 還 25 CatToken 後，應該只剩 75 CatToken
+			const user2CatTokenBalance = await catToken.balanceOf(user2.address);
+			expect(user2CatTokenBalance).to.equal(ethers.utils.parseUnits("75", 18));
+
+			// user2 代還 25 catToken 款後
+			// 現在的 price: 1 catToken		 = $  1
+			//              1 dragonToken	= $ 50
+			//              1 catToken      = 0.02 dragonToken
+			// 25 catToken 等於 0.5 dragonToken
+			// 0.5 * 1.1 = 0.55
+			// user2 會取得 0.55 個 cDragon
+
+			// 預設的平台抽成定義在 CTokenInterface 中
+			// uint public constant protocolSeizeShareMantissa = 2.8e16; //2.8%
+			// 所以 user2 真正會拿到的是： 0.55 * (1-2.8%) = 0.5346
+			const user2cDragonBalance = await cDragon.balanceOf(user2.address);
+			expect(user2cDragonBalance).to.equal(
+				ethers.utils.parseUnits("0.5346", 18)
 			);
 		});
 	});
