@@ -8,6 +8,16 @@ async function deployComptroller() {
 	return comptroller;
 }
 
+async function deployPriceOracle(cToken, underlyingPrice) {
+	const priceOracleFactory = await ethers.getContractFactory(
+		"SimplePriceOracle"
+	);
+	const priceOracle = await priceOracleFactory.deploy();
+	await priceOracle.deployed();
+
+	return priceOracle;
+}
+
 async function deployToken(name) {
 	// deploy ERC20 nameToken
 	const Token = await ethers.getContractFactory(name);
@@ -51,4 +61,5 @@ module.exports = {
 	deployCToken,
 	deployInterestRateModel,
 	deployToken,
+	deployPriceOracle,
 };
