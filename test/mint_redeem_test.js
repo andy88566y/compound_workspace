@@ -16,37 +16,13 @@ const {
 	deployInterestRateModel,
 	deployCToken,
 	deployPriceOracle,
+	deployContractsFixture,
 } = require("./setup");
 
 const { LogLevel, Logger } = require("@ethersproject/logger");
 Logger.setLogLevel(LogLevel.ERROR);
 
 describe("Mint/Redeem", async function () {
-	async function deployContractsFixture() {
-		// deploy contracts
-		catToken = await deployToken("CatToken");
-		dragonToken = await deployToken("DragonToken");
-		comptroller = await deployComptroller();
-		interestRateModel = await deployInterestRateModel();
-		cCat = await deployCToken(catToken);
-		cDragon = await deployCToken(dragonToken);
-		comptroller._supportMarket(cCat.address);
-		comptroller._supportMarket(cDragon.address);
-		const [owner, user1, user2] = await ethers.getSigners();
-
-		return {
-			catToken,
-			dragonToken,
-			comptroller,
-			interestRateModel,
-			cCat,
-			cDragon,
-			owner,
-			user1,
-			user2,
-		};
-	}
-
 	it("should be able to mint cCat with catToken and redeem back", async function () {
 		const { catToken, cCat, owner, user1 } = await loadFixture(
 			deployContractsFixture

@@ -1,5 +1,30 @@
 const { ethers } = require("hardhat");
 
+async function deployContractsFixture() {
+	// deploy contracts
+	catToken = await deployToken("CatToken");
+	dragonToken = await deployToken("DragonToken");
+	comptroller = await deployComptroller();
+	interestRateModel = await deployInterestRateModel();
+	cCat = await deployCToken(catToken);
+	cDragon = await deployCToken(dragonToken);
+	comptroller._supportMarket(cCat.address);
+	comptroller._supportMarket(cDragon.address);
+	const [owner, user1, user2] = await ethers.getSigners();
+
+	return {
+		catToken,
+		dragonToken,
+		comptroller,
+		interestRateModel,
+		cCat,
+		cDragon,
+		owner,
+		user1,
+		user2,
+	};
+}
+
 async function deployComptroller() {
 	// deploy Comptroller
 	const comptrollerFactory = await ethers.getContractFactory("Comptroller");
@@ -62,4 +87,5 @@ module.exports = {
 	deployInterestRateModel,
 	deployToken,
 	deployPriceOracle,
+	deployContractsFixture,
 };
