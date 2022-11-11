@@ -34,10 +34,10 @@ describe("Mint/Redeem", async function () {
 	it("should be able to mint cCat with catToken and redeem back", async function () {
 		const [owner, user] = await ethers.getSigners();
 		// 在 CatToken.sol 本來就有寫先給 owner 100 catTokens
-		await expect(await catToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
+		expect(await catToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
 		// 設定 user 有 1000 catToken
 		await catToken.mint(user.address, ethers.utils.parseUnits("1000", 18));
-		await expect(await catToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
+		expect(await catToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
 
 		// catToken approve cCat use
 		await catToken
@@ -53,9 +53,9 @@ describe("Mint/Redeem", async function () {
 		);
 
 		// user has 1000 - 100 = 900 catTokens left
-		await expect(await catToken.balanceOf(user.address)).to.eq(900n * DECIMAL);
+		expect(await catToken.balanceOf(user.address)).to.eq(900n * DECIMAL);
 		// user has 100 cToken
-		await expect(await cCat.balanceOf(user.address)).to.eq(100n * DECIMAL);
+		expect(await cCat.balanceOf(user.address)).to.eq(100n * DECIMAL);
 
 		// user use 100 cErc20 to redeem 100 erc20
 		await expect(
@@ -67,9 +67,9 @@ describe("Mint/Redeem", async function () {
 		);
 
 		// user has 900 + 100 = 1000 GCDTokens
-		await expect(await catToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
+		expect(await catToken.balanceOf(user.address)).to.eq(1000n * DECIMAL);
 		// user has 0 cToken
-		await expect(await cCat.balanceOf(user.address)).to.eq(0n * DECIMAL);
+		expect(await cCat.balanceOf(user.address)).to.eq(0n * DECIMAL);
 	});
 });
 
