@@ -1,10 +1,13 @@
 const { ethers } = require("hardhat");
-
+const { DEFAULT_FLAGS } = require("typechain");
+require("dotenv").config();
+const URL = process.env.URL;
 const OLD_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.5", 18);
 const NEW_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.3", 18);
 const DECIMAL = 10n ** 18n;
 
 async function deployContractsFixture() {
+	hardhatReset();
 	// deploy contracts
 	catToken = await deployToken("CatToken");
 	dragonToken = await deployToken("DragonToken");
@@ -150,6 +153,22 @@ async function deployCToken(token) {
 	return cToken;
 }
 
+DEFAULT_BLOCKNUMBER = 14390000;
+
+async function hardhatReset(blockNumber) {
+	await network.provider.request({
+		method: "hardhat_reset",
+		params: [
+			{
+				forking: {
+					jsonRpcUrl: URL,
+					blockNumber: blockNumber || DEFAULT_BLOCKNUMBER,
+				},
+			},
+		],
+	});
+}
+
 module.exports = {
 	deployComptroller,
 	deployCToken,
@@ -161,4 +180,5 @@ module.exports = {
 	OLD_COLLATERAL_FACTOR,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
+	DEFAULT_BLOCKNUMBER,
 };

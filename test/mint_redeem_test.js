@@ -12,6 +12,7 @@ const {
 	deployBorrowFixture,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
+	DEFAULT_BLOCKNUMBER,
 } = require("./setup");
 
 const { LogLevel, Logger } = require("@ethersproject/logger");
@@ -21,6 +22,9 @@ describe("Mint/Redeem", async function () {
 	it("should be able to mint cCat with catToken and redeem back", async function () {
 		const { catToken, cCat, owner, user1 } = await loadFixture(
 			deployContractsFixture
+		);
+		expect(await ethers.provider.getBlockNumber()).to.eq(
+			DEFAULT_BLOCKNUMBER + 11
 		);
 		// 在 CatToken.sol 本來就有寫先給 owner 100 catTokens
 		expect(await catToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
@@ -71,6 +75,9 @@ describe("Borrow / repayBorrow", async function () {
 	it("should User1 使用 dragonToken 作為抵押品來借出 50 顆 catTokens", async function () {
 		const { catToken, dragonToken, cCat, cDragon, owner, user1 } =
 			await loadFixture(deployBorrowFixture);
+		expect(await ethers.provider.getBlockNumber()).to.eq(
+			DEFAULT_BLOCKNUMBER + 35
+		);
 		// 確認 cCat 池子大小 & 流動性
 		expect(await cCat.balanceOf(owner.address)).to.eq(100n * DECIMAL);
 		expect(await cCat.getCash()).to.eq(100n * DECIMAL);
@@ -87,6 +94,9 @@ describe("Borrow / repayBorrow", async function () {
 		it("user2 can liquidated user1", async function () {
 			const { catToken, cCat, cDragon, user1, user2 } = await loadFixture(
 				deployBorrowFixture
+			);
+			expect(await ethers.provider.getBlockNumber()).to.eq(
+				DEFAULT_BLOCKNUMBER + 35
 			);
 
 			// 確認 user1 有 1 顆 cDragon
@@ -132,6 +142,9 @@ describe("Borrow / repayBorrow", async function () {
 		it("user2 can liquidated user1", async function () {
 			const { catToken, priceOracle, cCat, cDragon, user1, user2 } =
 				await loadFixture(deployBorrowFixture);
+			expect(await ethers.provider.getBlockNumber()).to.eq(
+				DEFAULT_BLOCKNUMBER + 35
+			);
 			// 確認 user1 有 1 顆 cDragon
 			expect(await cDragon.balanceOf(user1.address)).to.eq(1n * DECIMAL);
 			// user1 借了 50 CatToken
