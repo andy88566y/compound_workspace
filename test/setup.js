@@ -11,6 +11,7 @@ async function deployContractsFixture() {
 	comptroller._supportMarket(cCat.address);
 	comptroller._supportMarket(cDragon.address);
 	const [owner, user1, user2] = await ethers.getSigners();
+	await catToken.mint(user1.address, ethers.utils.parseUnits("1000", 18));
 
 	return {
 		catToken,

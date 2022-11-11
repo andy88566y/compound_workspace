@@ -29,8 +29,7 @@ describe("Mint/Redeem", async function () {
 		);
 		// 在 CatToken.sol 本來就有寫先給 owner 100 catTokens
 		expect(await catToken.balanceOf(owner.address)).to.eq(100n * DECIMAL);
-		// 設定 user 有 1000 catToken
-		await catToken.mint(user1.address, ethers.utils.parseUnits("1000", 18));
+		// 確認 user1 有 1000 catToken
 		expect(await catToken.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
 
 		// catToken approve cCat use
