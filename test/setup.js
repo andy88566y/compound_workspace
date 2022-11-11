@@ -74,11 +74,16 @@ async function deployBorrowFixture() {
 		ethers.utils.parseUnits("1.1", 18)
 	);
 
+	// user1 使用 1 顆 dragonToken 來 mint cDragon
+	await dragonToken.connect(user1).approve(cDragon.address, 1n * DECIMAL);
+	await cDragon.connect(user1).mint(1n * DECIMAL);
+
 	return {
 		catToken,
 		dragonToken,
 		comptroller,
 		interestRateModel,
+		priceOracle,
 		cCat,
 		cDragon,
 		owner,

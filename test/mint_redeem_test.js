@@ -75,11 +75,6 @@ describe("Borrow / repayBorrow", async function () {
 		expect(await cCat.balanceOf(owner.address)).to.eq(100n * DECIMAL);
 		expect(await cCat.getCash()).to.eq(100n * DECIMAL);
 
-		// user1 有 1 dragonToken
-		expect(await dragonToken.balanceOf(user1.address)).to.eq(1n * DECIMAL);
-		// user1 使用 1 顆 dragonToken 來 mint cDragon
-		await dragonToken.connect(user1).approve(cDragon.address, 1n * DECIMAL);
-		await cDragon.connect(user1).mint(1n * DECIMAL);
 		// user1 有 1 顆 cDragon
 		expect(await cDragon.balanceOf(user1.address)).to.eq(1n * DECIMAL);
 		// user1 借出 50 CatToken
@@ -90,17 +85,12 @@ describe("Borrow / repayBorrow", async function () {
 	// 調整 token A 的 collateral factor，讓 user1 被 user2 清算
 	describe("when collateral factor of catToken changes", async function () {
 		it("user2 can liquidated user1", async function () {
-			const { catToken, dragonToken, cCat, cDragon, user1, user2 } =
-				await loadFixture(deployBorrowFixture);
+			const { catToken, cCat, cDragon, user1, user2 } = await loadFixture(
+				deployBorrowFixture
+			);
 
-			// 確認 user 1 dragonToken 數目
-			expect(await dragonToken.balanceOf(user1.address)).to.eq(1n * DECIMAL);
-			// user1 使用 1 顆 dragonToken 來 mint cDragon
-			await dragonToken.connect(user1).approve(cDragon.address, 1n * DECIMAL);
-			await cDragon.connect(user1).mint(1n * DECIMAL);
-			// user1 有 1 顆 cDragon
+			// 確認 user1 有 1 顆 cDragon
 			expect(await cDragon.balanceOf(user1.address)).to.eq(1n * DECIMAL);
-			console.log("user1 用 1 cDragon 借了 50 CatToken");
 			// user1 借了 50 CatToken
 			await cCat.connect(user1).borrow(50n * DECIMAL);
 			// 重設抵押率，從 50% --> 30%
@@ -139,8 +129,11 @@ describe("Borrow / repayBorrow", async function () {
 
 	// 調整 oracle 中的 token B 的價格，讓 user1 被 user2 清算
 	describe("when price of dragonToken changes", async function () {
-		it.skip("user2 can liquidated user1", async function () {
-			const [, user1, user2] = await ethers.getSigners();
+		it("user2 can liquidated user1", async function () {
+			const { catToken, priceOracle, cCat, cDragon, user1, user2 } =
+				await loadFixture(deployBorrowFixture);
+			// 確認 user1 有 1 顆 cDragon
+			expect(await cDragon.balanceOf(user1.address)).to.eq(1n * DECIMAL);
 			// user1 借了 50 CatToken
 			await cCat.connect(user1).borrow(50n * DECIMAL);
 			// 重設 dragon price ， 從 $100 --> $50
