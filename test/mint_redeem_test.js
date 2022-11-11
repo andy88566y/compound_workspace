@@ -18,6 +18,9 @@ const {
 	deployPriceOracle,
 } = require("./setup");
 
+const { LogLevel, Logger } = require("@ethersproject/logger");
+Logger.setLogLevel(LogLevel.ERROR);
+
 describe("Mint/Redeem", async function () {
 	beforeEach(async function () {
 		// deploy contracts
