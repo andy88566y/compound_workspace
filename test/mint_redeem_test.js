@@ -10,6 +10,7 @@ const { ethers } = require("hardhat");
 const {
 	deployContractsFixture,
 	deployBorrowFixture,
+	deployFlashLoanFixture,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
 	DEFAULT_BLOCKNUMBER,
@@ -181,5 +182,11 @@ describe("Borrow / repayBorrow", async function () {
 				ethers.utils.parseUnits("0.5346", 18)
 			);
 		});
+	});
+});
+
+describe("FlashLoan", async function () {
+	it.only("should give owner right amount of USDC and UNI", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
 	});
 });

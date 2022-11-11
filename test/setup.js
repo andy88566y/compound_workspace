@@ -5,6 +5,10 @@ const URL = process.env.URL;
 const OLD_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.5", 18);
 const NEW_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.3", 18);
 const DECIMAL = 10n ** 18n;
+const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+const USDC_FAUCET_ADDRESS = "0xf977814e90da44bfa03b6295a0616a897441acec";
+const UNI_FAUCET_ADDRESS = "0x47173b170c64d16393a52e6c480b3ad8c302ba1e";
 
 async function deployContractsFixture() {
 	hardhatReset();
@@ -95,6 +99,40 @@ async function deployBorrowFixture() {
 	};
 }
 
+async function deployFlashLoanFixture() {
+	hardhatReset();
+	const [owner, user1, user2] = await ethers.getSigners();
+	await transferCoinsToOwner();
+	return {
+		owner,
+		user1,
+		user2,
+	};
+}
+
+async function transferCoinsToOwner() {
+	let transferAmount = 10000000;
+	const [owner] = await ethers.getSigners();
+
+	const usdc = await ethers.getContractAt("ERC20", USDC_ADDRESS);
+	await hre.network.provider.request({
+		method: "hardhat_impersonateAccount",
+		params: [USDC_FAUCET_ADDRESS],
+	});
+	const usdcFaucet = await ethers.getSigner(USDC_FAUCET_ADDRESS);
+	await usdc.connect(usdcFaucet).transfer(owner.address, transferAmount);
+
+	const uni = await ethers.getContractAt("ERC20", UNI_ADDRESS);
+	await hre.network.provider.request({
+		method: "hardhat_impersonateAccount",
+		params: [UNI_FAUCET_ADDRESS],
+	});
+	// 629500942657780000 -275277288132731896
+	const uniFaucet = await ethers.getSigner(UNI_FAUCET_ADDRESS);
+
+	await uni.connect(uniFaucet).transfer(owner.address, transferAmount);
+}
+
 async function deployComptroller() {
 	// deploy Comptroller
 	const comptrollerFactory = await ethers.getContractFactory("Comptroller");
@@ -177,6 +215,7 @@ module.exports = {
 	deployPriceOracle,
 	deployContractsFixture,
 	deployBorrowFixture,
+	deployFlashLoanFixture,
 	OLD_COLLATERAL_FACTOR,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,

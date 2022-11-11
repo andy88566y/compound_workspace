@@ -25,6 +25,8 @@ module.exports = {
 		apiKey: ETHERSCAN_API_KEY,
 	},
 	networks: {
-		hardhat: {},
+		hardhat: {
+			gas: 1800000,
+		},
 	},
 };
