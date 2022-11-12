@@ -109,10 +109,24 @@ async function deployFlashLoanFixture() {
 	interestRateModel = await deployInterestRateModel();
 	cUSDC = await deployCToken(usdc, comptroller, interestRateModel);
 	cUNI = await deployCToken(uni, comptroller, interestRateModel);
+
+	priceOracle = await deployPriceOracle();
+	await priceOracle.setUnderlyingPrice(cUSDC.address, 1n * DECIMAL);
+	await priceOracle.setUnderlyingPrice(cUNI.address, 10n * DECIMAL);
+
+	comptroller._supportMarket(cUSDC.address);
+	comptroller._supportMarket(cUNI.address);
+	// setting priceOracle
+	await comptroller._setPriceOracle(await priceOracle.address);
+
 	// enterMarket 提供流動性
 	await comptroller.connect(owner).enterMarkets([cUSDC.address, cUNI.address]);
 	// 設定 CloseFactor 最高可清算比例 50%
 	await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
+	// 清算獎勵
+	await comptroller._setLiquidationIncentive(
+		ethers.utils.parseUnits("1.1", 18)
+	);
 
 	return {
 		owner,
@@ -121,6 +135,7 @@ async function deployFlashLoanFixture() {
 		cUSDC,
 		cUNI,
 		comptroller,
+		priceOracle,
 	};
 }
 

@@ -225,19 +225,29 @@ describe("FlashLoan", async function () {
 	});
 
 	it("Liquidation incentive 設為 10% (1.1 * 1e18)", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+		const { comptroller } = await loadFixture(deployFlashLoanFixture);
+		expect(await comptroller.liquidationIncentiveMantissa()).to.eq(
+			ethers.utils.parseUnits("1.1", 18)
+		);
 	});
 
 	it("USDC price is $1 by oracle", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+		const { priceOracle, cUSDC } = await loadFixture(deployFlashLoanFixture);
+		expect(await priceOracle.getUnderlyingPrice(cUSDC.address)).to.eq(
+			1n * DECIMAL
+		);
 	});
 
 	it("UNI price is $10 by oracle", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+		const { priceOracle, cUNI } = await loadFixture(deployFlashLoanFixture);
+		expect(await priceOracle.getUnderlyingPrice(cUNI.address)).to.eq(
+			10n * DECIMAL
+		);
 	});
 
-	it("user1 can mint 1000 cUNI", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	it.only("user1 can mint 1000 cUNI", async function () {
+		const { user1, cUNI } = await loadFixture(deployFlashLoanFixture);
+		expect(cUNI.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
 	});
 
 	it("user1 can borrow 5000 USDC using 1000 cUNI as mortgage", async function () {
