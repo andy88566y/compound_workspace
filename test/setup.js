@@ -11,6 +11,8 @@ const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
 const USDC_FAUCET_ADDRESS = "0xf977814e90da44bfa03b6295a0616a897441acec";
 const UNI_FAUCET_ADDRESS = "0x47173b170c64d16393a52e6c480b3ad8c302ba1e";
+const NEW_UNITOKEN_PRICE = (62n * DECIMAL) / 10n;
+const USDC_BORROW_AMOUNT = 5000n * USDC_DECIMAL;
 
 async function deployContractsFixture() {
 	hardhatReset();
@@ -182,6 +184,36 @@ async function deployFlashLoanBorrowedFixture() {
 	};
 }
 
+async function deployFlashLoanUNIPriceDropFixture() {
+	const {
+		owner,
+		user1,
+		user2,
+		usdc,
+		uni,
+		cUSDC,
+		cUNI,
+		comptroller,
+		priceOracle,
+	} = await deployFlashLoanBorrowedFixture();
+
+	await cUSDC.connect(user1).borrow(USDC_BORROW_AMOUNT);
+	// change UNI oracle price
+	await priceOracle.setUnderlyingPrice(cUNI.address, NEW_UNITOKEN_PRICE);
+
+	return {
+		owner,
+		user1,
+		user2,
+		usdc,
+		uni,
+		cUSDC,
+		cUNI,
+		comptroller,
+		priceOracle,
+	};
+}
+
 async function transferCoinsToOwnerAndUser() {
 	const [owner, user1] = await ethers.getSigners();
 
@@ -271,7 +303,6 @@ async function deployCToken(token, comptroller, interestRateModel) {
 }
 
 DEFAULT_BLOCKNUMBER = 15815693;
-
 async function hardhatReset(blockNumber) {
 	await network.provider.request({
 		method: "hardhat_reset",
@@ -296,6 +327,7 @@ module.exports = {
 	deployBorrowFixture,
 	deployFlashLoanFixture,
 	deployFlashLoanBorrowedFixture,
+	deployFlashLoanUNIPriceDropFixture,
 	OLD_COLLATERAL_FACTOR,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
@@ -303,4 +335,6 @@ module.exports = {
 	USDC_ADDRESS,
 	UNI_ADDRESS,
 	USDC_DECIMAL,
+	USDC_BORROW_AMOUNT,
+	NEW_UNITOKEN_PRICE,
 };

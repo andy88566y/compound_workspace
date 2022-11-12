@@ -12,12 +12,13 @@ const {
 	deployBorrowFixture,
 	deployFlashLoanFixture,
 	deployFlashLoanBorrowedFixture,
+	deployFlashLoanUNIPriceDropFixture,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
 	USDC_DECIMAL,
 	DEFAULT_BLOCKNUMBER,
-	USDC_ADDRESS,
-	UNI_ADDRESS,
+	NEW_UNITOKEN_PRICE,
+	USDC_BORROW_AMOUNT,
 } = require("./setup");
 
 const { LogLevel, Logger } = require("@ethersproject/logger");
@@ -245,7 +246,6 @@ describe("FlashLoan", async function () {
 		expect(await cUNI.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
 	});
 
-	const USDC_BORROW_AMOUNT = 5000n * USDC_DECIMAL;
 	it("user1 can borrow 5000 USDC using 1000 cUNI as collateral", async function () {
 		const { usdc, user1, cUSDC } = await loadFixture(
 			deployFlashLoanBorrowedFixture
@@ -268,15 +268,10 @@ describe("FlashLoan", async function () {
 		// 結果 UNI 價格掉落到 $6.2，總抵押價值剩下 6,200
 		// 最多只能借 6,200 * 50% = 3,100
 		// shortfall 會是 $1900
-		const { comptroller, user1, cUSDC, cUNI, priceOracle } = await loadFixture(
-			deployFlashLoanBorrowedFixture
+		const { comptroller, user1, cUNI, priceOracle } = await loadFixture(
+			deployFlashLoanUNIPriceDropFixture
 		);
-		const bar = await comptroller.getAccountLiquidity(user1.address);
-		await cUSDC.connect(user1).borrow(USDC_BORROW_AMOUNT);
-		const foo = await comptroller.getAccountLiquidity(user1.address);
-		// change UNI oracle price
-		const NEW_UNITOKEN_PRICE = (62n * DECIMAL) / 10n;
-		await priceOracle.setUnderlyingPrice(cUNI.address, NEW_UNITOKEN_PRICE);
+
 		expect(await priceOracle.getUnderlyingPrice(cUNI.address)).to.eq(
 			NEW_UNITOKEN_PRICE
 		);
@@ -290,6 +285,8 @@ describe("FlashLoan", async function () {
 		expect(shortfall).to.gt(0);
 		expect(shortfall).to.eq(1900n * DECIMAL);
 	});
+
+	it("user2 can liquadte user1", async function () {});
 
 	it("將 UNI 價格改為 $6.2, user2 use AAVE 的 Flash loan 來清算 User1", async function () {
 		const { owner, user1, user2 } = await loadFixture(
