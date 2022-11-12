@@ -189,7 +189,7 @@ describe("Borrow / repayBorrow", async function () {
 });
 
 describe("FlashLoan", async function () {
-	it.only("should give owner and user1 right amount of USDC and UNI", async function () {
+	it("should give owner and user1 right amount of USDC and UNI", async function () {
 		const { owner, user1, usdc, uni } = await loadFixture(
 			deployFlashLoanFixture
 		);
@@ -200,11 +200,6 @@ describe("FlashLoan", async function () {
 		expect(await uni.balanceOf(owner.address)).to.eq(10000n * DECIMAL);
 		expect(await uni.balanceOf(owner.address)).to.eq(
 			ethers.utils.parseUnits("10000", 18)
-		);
-
-		expect(await uni.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
-		expect(await uni.balanceOf(user1.address)).to.eq(
-			ethers.utils.parseUnits("1000", 18)
 		);
 	});
 
@@ -250,7 +245,7 @@ describe("FlashLoan", async function () {
 		);
 	});
 
-	it.only("user1 can mint 1000 cUNI", async function () {
+	it("user1 can mint 1000 cUNI", async function () {
 		const { user1, cUNI } = await loadFixture(deployFlashLoanFixture);
 		expect(await cUNI.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
 	});

@@ -129,6 +129,8 @@ async function deployFlashLoanFixture() {
 	);
 
 	// user1 mint 1000 cUNI
+	await uni.connect(user1).approve(cUNI.address, 1000n * DECIMAL);
+	await cUNI.connect(user1).mint(1000n * DECIMAL);
 
 	return {
 		owner,
