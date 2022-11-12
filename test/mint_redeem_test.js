@@ -11,6 +11,7 @@ const {
 	deployContractsFixture,
 	deployBorrowFixture,
 	deployFlashLoanFixture,
+	deployFlashLoanBorrowedFixture,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
 	USDC_DECIMAL,
@@ -207,12 +208,6 @@ describe("FlashLoan", async function () {
 		const { cUSDC, cUNI } = await loadFixture(deployFlashLoanFixture);
 		expect(await cUSDC.decimals()).to.eq(18);
 		expect(await cUNI.decimals()).to.eq(18);
-		console.log(
-			`cUSDC.exchangeRateStored(): ${await cUSDC.exchangeRateStored()}`
-		);
-		console.log(
-			`cUNI.exchangeRateStored(): ${await cUNI.exchangeRateStored()}`
-		);
 		expect(await cUSDC.exchangeRateStored()).to.eq(USDC_DECIMAL);
 		expect(await cUNI.exchangeRateStored()).to.eq(DECIMAL);
 	});
@@ -250,17 +245,31 @@ describe("FlashLoan", async function () {
 		expect(await cUNI.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
 	});
 
-	it("user1 can borrow 5000 USDC using 1000 cUNI as mortgage", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	it("user1 can borrow 5000 USDC using 1000 cUNI as collateral", async function () {
+		const { usdc, user1, cUSDC } = await loadFixture(
+			deployFlashLoanBorrowedFixture
+		);
+		const USDC_BORROW_AMOUNT = 5000n * USDC_DECIMAL;
+		expect(
+			cUSDC.connect(user1).borrow(5000n * USDC_BORROW_AMOUNT)
+		).to.changeTokenBalances(
+			usdc,
+			[cUSDC, user1],
+			[-USDC_BORROW_AMOUNT, USDC_BORROW_AMOUNT]
+		);
 	});
 
 	describe("將 UNI 價格改為 $6.2", async function () {
 		it("user1 has Shortfall", async function () {
-			const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+			const { owner, user1, user2 } = await loadFixture(
+				deployFlashLoanBorrowedFixture
+			);
 		});
 
 		it("user2 use AAVE 的 Flash loan 來清算 User1", async function () {
-			const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+			const { owner, user1, user2 } = await loadFixture(
+				deployFlashLoanBorrowedFixture
+			);
 			// 清算 50% 後是不是大約可以賺 121 USD
 		});
 	});

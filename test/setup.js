@@ -119,8 +119,11 @@ async function deployFlashLoanFixture() {
 	// setting priceOracle
 	await comptroller._setPriceOracle(await priceOracle.address);
 
-	// enterMarket 提供流動性
+	// enterMarket
 	await comptroller.connect(owner).enterMarkets([cUSDC.address, cUNI.address]);
+	await comptroller.connect(user1).enterMarkets([cUSDC.address, cUNI.address]);
+	//set collateral factor to 50%
+	await comptroller._setCollateralFactor(cUNI.address, OLD_COLLATERAL_FACTOR);
 	// 設定 CloseFactor 最高可清算比例 50%
 	await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
 	// 清算獎勵
@@ -131,6 +134,37 @@ async function deployFlashLoanFixture() {
 	// user1 mint 1000 cUNI
 	await uni.connect(user1).approve(cUNI.address, 1000n * DECIMAL);
 	await cUNI.connect(user1).mint(1000n * DECIMAL);
+
+	return {
+		owner,
+		user1,
+		user2,
+		usdc,
+		uni,
+		cUSDC,
+		cUNI,
+		comptroller,
+		priceOracle,
+	};
+}
+
+async function deployFlashLoanBorrowedFixture() {
+	const {
+		owner,
+		user1,
+		user2,
+		usdc,
+		uni,
+		cUSDC,
+		cUNI,
+		comptroller,
+		priceOracle,
+	} = await deployFlashLoanFixture();
+
+	// owner 存 5000 顆 USDC 進去池子
+
+	await usdc.connect(owner).approve(cUSDC.address, 5000n * USDC_DECIMAL);
+	await cUSDC.connect(owner).mint(5000n * USDC_DECIMAL);
 
 	return {
 		owner,
@@ -163,7 +197,6 @@ async function transferCoinsToOwnerAndUser() {
 		params: [UNI_FAUCET_ADDRESS],
 	});
 	const uniFaucet = await ethers.getSigner(UNI_FAUCET_ADDRESS);
-
 	await uni.connect(uniFaucet).transfer(owner.address, 10000n * DECIMAL);
 	await uni.connect(uniFaucet).transfer(user1.address, 1000n * DECIMAL);
 	return {
@@ -219,7 +252,7 @@ async function deployCToken(token, comptroller, interestRateModel) {
 	const decimal = await token.decimals();
 	// (18 - 18 + underlying decimal)
 	const exchangeRate = 10n ** BigInt(decimal);
-	console.log(`${tokenName} initail exchange rate is: ${exchangeRate}`);
+
 	const cToken = await cErc20Factory.deploy(
 		token.address,
 		comptroller.address,
@@ -259,6 +292,7 @@ module.exports = {
 	deployContractsFixture,
 	deployBorrowFixture,
 	deployFlashLoanFixture,
+	deployFlashLoanBorrowedFixture,
 	OLD_COLLATERAL_FACTOR,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
