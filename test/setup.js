@@ -104,7 +104,7 @@ async function deployBorrowFixture() {
 async function deployFlashLoanFixture() {
 	hardhatReset();
 	const [owner, user1, user2] = await ethers.getSigners();
-	const { usdc, uni } = await transferCoinsToOwner();
+	const { usdc, uni } = await transferCoinsToOwnerAndUser();
 	comptroller = await deployComptroller();
 	interestRateModel = await deployInterestRateModel();
 	cUSDC = await deployCToken(usdc, comptroller, interestRateModel);
@@ -128,10 +128,14 @@ async function deployFlashLoanFixture() {
 		ethers.utils.parseUnits("1.1", 18)
 	);
 
+	// user1 mint 1000 cUNI
+
 	return {
 		owner,
 		user1,
 		user2,
+		usdc,
+		uni,
 		cUSDC,
 		cUNI,
 		comptroller,
@@ -139,9 +143,8 @@ async function deployFlashLoanFixture() {
 	};
 }
 
-async function transferCoinsToOwner() {
-	let transferAmount = 10000n;
-	const [owner] = await ethers.getSigners();
+async function transferCoinsToOwnerAndUser() {
+	const [owner, user1] = await ethers.getSigners();
 
 	const usdc = await ethers.getContractAt("ERC20", USDC_ADDRESS);
 	await hre.network.provider.request({
@@ -150,16 +153,7 @@ async function transferCoinsToOwner() {
 	});
 
 	const usdcFaucet = await ethers.getSigner(USDC_FAUCET_ADDRESS);
-	let balance = await usdc.balanceOf(usdcFaucet.address);
-	console.log(
-		`USDC_FAUCET_ADDRESS USDC balance: ${ethers.utils.formatUnits(
-			balance.toString(),
-			6
-		)}`
-	);
-	await usdc
-		.connect(usdcFaucet)
-		.transfer(owner.address, transferAmount * USDC_DECIMAL);
+	await usdc.connect(usdcFaucet).transfer(owner.address, 10000n * USDC_DECIMAL);
 
 	const uni = await ethers.getContractAt("ERC20", UNI_ADDRESS);
 	await hre.network.provider.request({
@@ -167,17 +161,9 @@ async function transferCoinsToOwner() {
 		params: [UNI_FAUCET_ADDRESS],
 	});
 	const uniFaucet = await ethers.getSigner(UNI_FAUCET_ADDRESS);
-	balance = await uni.balanceOf(uniFaucet.address);
-	console.log(
-		`UNI_FAUCET_ADDRESS UNI balance: ${ethers.utils.formatUnits(
-			balance.toString(),
-			18
-		)}`
-	);
 
-	await uni
-		.connect(uniFaucet)
-		.transfer(owner.address, transferAmount * DECIMAL);
+	await uni.connect(uniFaucet).transfer(owner.address, 10000n * DECIMAL);
+	await uni.connect(uniFaucet).transfer(user1.address, 1000n * DECIMAL);
 	return {
 		usdc,
 		uni,
