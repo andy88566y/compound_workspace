@@ -46,8 +46,8 @@ async function deployBorrowFixture() {
 	dragonToken = await deployToken("DragonToken");
 	comptroller = await deployComptroller();
 	interestRateModel = await deployInterestRateModel();
-	cCat = await deployCToken(catToken);
-	cDragon = await deployCToken(dragonToken);
+	cCat = await deployCToken(catToken, comptroller, interestRateModel);
+	cDragon = await deployCToken(dragonToken, comptroller, interestRateModel);
 
 	priceOracle = await deployPriceOracle();
 	await priceOracle.setUnderlyingPrice(cCat.address, 1n * DECIMAL);

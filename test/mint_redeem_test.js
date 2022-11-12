@@ -189,7 +189,7 @@ describe("Borrow / repayBorrow", async function () {
 });
 
 describe("FlashLoan", async function () {
-	it.only("should give owner right amount of USDC and UNI", async function () {
+	it("should give owner right amount of USDC and UNI", async function () {
 		const { owner } = await loadFixture(deployFlashLoanFixture);
 		const usdc = await ethers.getContractAt("ERC20", USDC_ADDRESS);
 		const uni = await ethers.getContractAt("ERC20", UNI_ADDRESS);
@@ -203,7 +203,7 @@ describe("FlashLoan", async function () {
 		);
 	});
 
-	it.only("cUSDC/cUNI 的 decimals 皆為 18, 初始 exchangeRate 為 1:1", async function () {
+	it("cUSDC/cUNI 的 decimals 皆為 18, 初始 exchangeRate 為 1:1", async function () {
 		const { cUSDC, cUNI } = await loadFixture(deployFlashLoanFixture);
 		expect(await cUSDC.decimals()).to.eq(18);
 		expect(await cUNI.decimals()).to.eq(18);
@@ -217,7 +217,7 @@ describe("FlashLoan", async function () {
 		expect(await cUNI.exchangeRateStored()).to.eq(DECIMAL);
 	});
 
-	it.only("Close factor 設定為 50%", async function () {
+	it("Close factor 設定為 50%", async function () {
 		const { comptroller } = await loadFixture(deployFlashLoanFixture);
 		expect(await comptroller.closeFactorMantissa()).to.eq(
 			ethers.utils.parseUnits("0.5", 18)
