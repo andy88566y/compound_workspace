@@ -110,9 +110,12 @@ async function deployFlashLoanFixture() {
 	cUSDC = await deployCToken(usdc, comptroller, interestRateModel);
 	cUNI = await deployCToken(uni, comptroller, interestRateModel);
 
+	// Price For USDC DECIMAL
+	const USDCTOKEN_PRICE = 1n * DECIMAL * 10n ** 12n;
+	const UNITOKEN_PRICE = 10n * DECIMAL;
 	priceOracle = await deployPriceOracle();
-	await priceOracle.setUnderlyingPrice(cUSDC.address, 1n * DECIMAL);
-	await priceOracle.setUnderlyingPrice(cUNI.address, 10n * DECIMAL);
+	await priceOracle.setUnderlyingPrice(cUSDC.address, USDCTOKEN_PRICE);
+	await priceOracle.setUnderlyingPrice(cUNI.address, UNITOKEN_PRICE);
 
 	comptroller._supportMarket(cUSDC.address);
 	comptroller._supportMarket(cUNI.address);
@@ -163,7 +166,7 @@ async function deployFlashLoanBorrowedFixture() {
 
 	// owner 存 5000 顆 USDC 進去池子
 
-	await usdc.connect(owner).approve(cUSDC.address, 5000n * USDC_DECIMAL);
+	await usdc.connect(owner).approve(cUSDC.address, 10000n * USDC_DECIMAL);
 	await cUSDC.connect(owner).mint(5000n * USDC_DECIMAL);
 
 	return {
@@ -267,7 +270,7 @@ async function deployCToken(token, comptroller, interestRateModel) {
 	return cToken;
 }
 
-DEFAULT_BLOCKNUMBER = 14390000;
+DEFAULT_BLOCKNUMBER = 15815693;
 
 async function hardhatReset(blockNumber) {
 	await network.provider.request({

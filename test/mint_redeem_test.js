@@ -229,7 +229,7 @@ describe("FlashLoan", async function () {
 	it("USDC price is $1 by oracle", async function () {
 		const { priceOracle, cUSDC } = await loadFixture(deployFlashLoanFixture);
 		expect(await priceOracle.getUnderlyingPrice(cUSDC.address)).to.eq(
-			1n * DECIMAL
+			1n * DECIMAL * 10n ** 12n
 		);
 	});
 
@@ -245,13 +245,15 @@ describe("FlashLoan", async function () {
 		expect(await cUNI.balanceOf(user1.address)).to.eq(1000n * DECIMAL);
 	});
 
+	const USDC_BORROW_AMOUNT = 5000n * USDC_DECIMAL;
 	it("user1 can borrow 5000 USDC using 1000 cUNI as collateral", async function () {
 		const { usdc, user1, cUSDC } = await loadFixture(
 			deployFlashLoanBorrowedFixture
 		);
-		const USDC_BORROW_AMOUNT = 5000n * USDC_DECIMAL;
+
+		expect(await usdc.balanceOf(cUSDC.address)).to.eq(USDC_BORROW_AMOUNT);
 		expect(
-			cUSDC.connect(user1).borrow(5000n * USDC_BORROW_AMOUNT)
+			cUSDC.connect(user1).borrow(USDC_BORROW_AMOUNT)
 		).to.changeTokenBalances(
 			usdc,
 			[cUSDC, user1],
@@ -259,18 +261,40 @@ describe("FlashLoan", async function () {
 		);
 	});
 
-	describe("將 UNI 價格改為 $6.2", async function () {
-		it("user1 has Shortfall", async function () {
-			const { owner, user1, user2 } = await loadFixture(
-				deployFlashLoanBorrowedFixture
-			);
-		});
+	it("將 UNI 價格改為 $6.2, user1 has Shortfall", async function () {
+		// 原本是用 1,000 UNI($10/UNI) 借出了 5,000 USDC ($1/USDC)
+		// 總抵押價值為 $ 10,000, 總借出價值為 $ 5,000
+		// collateral factor 為 50%
+		// 結果 UNI 價格掉落到 $6.2，總抵押價值剩下 6,200
+		// 最多只能借 6,200 * 50% = 3,100
+		// shortfall 會是 $1900
+		const { comptroller, user1, cUSDC, cUNI, priceOracle } = await loadFixture(
+			deployFlashLoanBorrowedFixture
+		);
+		const bar = await comptroller.getAccountLiquidity(user1.address);
+		await cUSDC.connect(user1).borrow(USDC_BORROW_AMOUNT);
+		const foo = await comptroller.getAccountLiquidity(user1.address);
+		// change UNI oracle price
+		const NEW_UNITOKEN_PRICE = (62n * DECIMAL) / 10n;
+		await priceOracle.setUnderlyingPrice(cUNI.address, NEW_UNITOKEN_PRICE);
+		expect(await priceOracle.getUnderlyingPrice(cUNI.address)).to.eq(
+			NEW_UNITOKEN_PRICE
+		);
 
-		it("user2 use AAVE 的 Flash loan 來清算 User1", async function () {
-			const { owner, user1, user2 } = await loadFixture(
-				deployFlashLoanBorrowedFixture
-			);
-			// 清算 50% 後是不是大約可以賺 121 USD
-		});
+		const result = await comptroller.getAccountLiquidity(user1.address);
+		// result[0] 是 error number
+		// result[1] 是 liquidity
+		// result[2] 是 shortfall
+		const shortfall = result[2];
+
+		expect(shortfall).to.gt(0);
+		expect(shortfall).to.eq(1900n * DECIMAL);
+	});
+
+	it("將 UNI 價格改為 $6.2, user2 use AAVE 的 Flash loan 來清算 User1", async function () {
+		const { owner, user1, user2 } = await loadFixture(
+			deployFlashLoanBorrowedFixture
+		);
+		// 清算 50% 後是不是大約可以賺 121 USD
 	});
 });
