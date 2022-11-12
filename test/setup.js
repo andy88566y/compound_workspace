@@ -196,11 +196,14 @@ async function deployCToken(token) {
 	const cErc20Factory = await ethers.getContractFactory("CErc20Immutable");
 	tokenName = await token.name();
 	tokenSymbol = await token.symbol();
+	const decimal = await token.decimals();
+	// (18 - 18 + underlying decimal)
+	const exchangeRate = 10n ** BigInt(decimal);
 	const cToken = await cErc20Factory.deploy(
 		token.address,
 		comptroller.address,
 		interestRateModel.address,
-		ethers.utils.parseUnits("1", 18),
+		exchangeRate, // initialExchangeRateMantissa_
 		tokenName,
 		tokenSymbol,
 		18,
