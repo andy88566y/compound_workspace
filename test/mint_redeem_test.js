@@ -203,12 +203,25 @@ describe("FlashLoan", async function () {
 		);
 	});
 
-	it("cUSDC/cUNI 的 decimals 皆為 18, 初始 exchangeRate 為 1:1", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	it.only("cUSDC/cUNI 的 decimals 皆為 18, 初始 exchangeRate 為 1:1", async function () {
+		const { cUSDC, cUNI } = await loadFixture(deployFlashLoanFixture);
+		expect(await cUSDC.decimals()).to.eq(18);
+		expect(await cUNI.decimals()).to.eq(18);
+		console.log(
+			`cUSDC.exchangeRateStored(): ${await cUSDC.exchangeRateStored()}`
+		);
+		console.log(
+			`cUNI.exchangeRateStored(): ${await cUNI.exchangeRateStored()}`
+		);
+		expect(await cUSDC.exchangeRateStored()).to.eq(USDC_DECIMAL);
+		expect(await cUNI.exchangeRateStored()).to.eq(DECIMAL);
 	});
 
-	it("Close factor 設定為 50%", async function () {
-		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	it.only("Close factor 設定為 50%", async function () {
+		const { comptroller } = await loadFixture(deployFlashLoanFixture);
+		expect(await comptroller.closeFactorMantissa()).to.eq(
+			ethers.utils.parseUnits("0.5", 18)
+		);
 	});
 
 	it("Liquidation incentive 設為 10% (1.1 * 1e18)", async function () {

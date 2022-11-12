@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { int } = require("hardhat/internal/core/params/argumentTypes");
 const { DEFAULT_FLAGS } = require("typechain");
 require("dotenv").config();
 const URL = process.env.URL;
@@ -18,8 +19,8 @@ async function deployContractsFixture() {
 	dragonToken = await deployToken("DragonToken");
 	comptroller = await deployComptroller();
 	interestRateModel = await deployInterestRateModel();
-	cCat = await deployCToken(catToken);
-	cDragon = await deployCToken(dragonToken);
+	cCat = await deployCToken(catToken, comptroller, interestRateModel);
+	cDragon = await deployCToken(dragonToken, comptroller, interestRateModel);
 	comptroller._supportMarket(cCat.address);
 	comptroller._supportMarket(cDragon.address);
 	const [owner, user1, user2] = await ethers.getSigners();
@@ -103,11 +104,23 @@ async function deployBorrowFixture() {
 async function deployFlashLoanFixture() {
 	hardhatReset();
 	const [owner, user1, user2] = await ethers.getSigners();
-	await transferCoinsToOwner();
+	const { usdc, uni } = await transferCoinsToOwner();
+	comptroller = await deployComptroller();
+	interestRateModel = await deployInterestRateModel();
+	cUSDC = await deployCToken(usdc, comptroller, interestRateModel);
+	cUNI = await deployCToken(uni, comptroller, interestRateModel);
+	// enterMarket 提供流動性
+	await comptroller.connect(owner).enterMarkets([cUSDC.address, cUNI.address]);
+	// 設定 CloseFactor 最高可清算比例 50%
+	await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
+
 	return {
 		owner,
 		user1,
 		user2,
+		cUSDC,
+		cUNI,
+		comptroller,
 	};
 }
 
@@ -150,6 +163,10 @@ async function transferCoinsToOwner() {
 	await uni
 		.connect(uniFaucet)
 		.transfer(owner.address, transferAmount * DECIMAL);
+	return {
+		usdc,
+		uni,
+	};
 }
 
 async function deployComptroller() {
@@ -191,7 +208,7 @@ async function deployInterestRateModel() {
 	return interestRateModel;
 }
 
-async function deployCToken(token) {
+async function deployCToken(token, comptroller, interestRateModel) {
 	const [owner] = await ethers.getSigners();
 	const cErc20Factory = await ethers.getContractFactory("CErc20Immutable");
 	tokenName = await token.name();
@@ -199,6 +216,7 @@ async function deployCToken(token) {
 	const decimal = await token.decimals();
 	// (18 - 18 + underlying decimal)
 	const exchangeRate = 10n ** BigInt(decimal);
+	console.log(`${tokenName} initail exchange rate is: ${exchangeRate}`);
 	const cToken = await cErc20Factory.deploy(
 		token.address,
 		comptroller.address,
