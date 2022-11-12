@@ -5,6 +5,7 @@ const URL = process.env.URL;
 const OLD_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.5", 18);
 const NEW_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.3", 18);
 const DECIMAL = 10n ** 18n;
+const USDC_DECIMAL = 10n ** 6n;
 const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
 const USDC_FAUCET_ADDRESS = "0xf977814e90da44bfa03b6295a0616a897441acec";
@@ -111,7 +112,7 @@ async function deployFlashLoanFixture() {
 }
 
 async function transferCoinsToOwner() {
-	let transferAmount = 10000000;
+	let transferAmount = 10000n;
 	const [owner] = await ethers.getSigners();
 
 	const usdc = await ethers.getContractAt("ERC20", USDC_ADDRESS);
@@ -119,18 +120,36 @@ async function transferCoinsToOwner() {
 		method: "hardhat_impersonateAccount",
 		params: [USDC_FAUCET_ADDRESS],
 	});
+
 	const usdcFaucet = await ethers.getSigner(USDC_FAUCET_ADDRESS);
-	await usdc.connect(usdcFaucet).transfer(owner.address, transferAmount);
+	let balance = await usdc.balanceOf(usdcFaucet.address);
+	console.log(
+		`USDC_FAUCET_ADDRESS USDC balance: ${ethers.utils.formatUnits(
+			balance.toString(),
+			6
+		)}`
+	);
+	await usdc
+		.connect(usdcFaucet)
+		.transfer(owner.address, transferAmount * USDC_DECIMAL);
 
 	const uni = await ethers.getContractAt("ERC20", UNI_ADDRESS);
 	await hre.network.provider.request({
 		method: "hardhat_impersonateAccount",
 		params: [UNI_FAUCET_ADDRESS],
 	});
-	// 629500942657780000 -275277288132731896
 	const uniFaucet = await ethers.getSigner(UNI_FAUCET_ADDRESS);
+	balance = await uni.balanceOf(uniFaucet.address);
+	console.log(
+		`UNI_FAUCET_ADDRESS UNI balance: ${ethers.utils.formatUnits(
+			balance.toString(),
+			18
+		)}`
+	);
 
-	await uni.connect(uniFaucet).transfer(owner.address, transferAmount);
+	await uni
+		.connect(uniFaucet)
+		.transfer(owner.address, transferAmount * DECIMAL);
 }
 
 async function deployComptroller() {
@@ -220,4 +239,7 @@ module.exports = {
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
 	DEFAULT_BLOCKNUMBER,
+	USDC_ADDRESS,
+	UNI_ADDRESS,
+	USDC_DECIMAL,
 };

@@ -13,7 +13,10 @@ const {
 	deployFlashLoanFixture,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
+	USDC_DECIMAL,
 	DEFAULT_BLOCKNUMBER,
+	USDC_ADDRESS,
+	UNI_ADDRESS,
 } = require("./setup");
 
 const { LogLevel, Logger } = require("@ethersproject/logger");
@@ -187,6 +190,55 @@ describe("Borrow / repayBorrow", async function () {
 
 describe("FlashLoan", async function () {
 	it.only("should give owner right amount of USDC and UNI", async function () {
+		const { owner } = await loadFixture(deployFlashLoanFixture);
+		const usdc = await ethers.getContractAt("ERC20", USDC_ADDRESS);
+		const uni = await ethers.getContractAt("ERC20", UNI_ADDRESS);
+		expect(await usdc.balanceOf(owner.address)).to.eq(10000n * USDC_DECIMAL);
+		expect(await usdc.balanceOf(owner.address)).to.eq(
+			ethers.utils.parseUnits("10000", 6)
+		);
+		expect(await uni.balanceOf(owner.address)).to.eq(10000n * DECIMAL);
+		expect(await uni.balanceOf(owner.address)).to.eq(
+			ethers.utils.parseUnits("10000", 18)
+		);
+	});
+
+	it("cUSDC/cUNI 的 decimals 皆為 18, 初始 exchangeRate 為 1:1", async function () {
 		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	it("Close factor 設定為 50%", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	it("Liquidation incentive 設為 10% (1.1 * 1e18)", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	it("USDC price is $1 by oracle", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	it("UNI price is $10 by oracle", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	it("user1 can mint 1000 cUNI", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	it("user1 can borrow 5000 USDC using 1000 cUNI as mortgage", async function () {
+		const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+	});
+
+	describe("將 UNI 價格改為 $6.2", async function () {
+		it("user1 has Shortfall", async function () {
+			const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+		});
+
+		it("user2 use AAVE 的 Flash loan 來清算 User1", async function () {
+			const { owner, user1, user2 } = await loadFixture(deployFlashLoanFixture);
+			// 清算 50% 後是不是大約可以賺 121 USD
+		});
 	});
 });
