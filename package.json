@@ -23,6 +23,7 @@
     "@ethersproject/logger": "^5.7.0",
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.8.0-rc.1",
+    "big-number": "^2.0.0",
     "compound-protocol-kakapo911": "^0.2.4"
   }
 }
