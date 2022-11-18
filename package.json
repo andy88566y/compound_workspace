@@ -20,6 +20,7 @@
     "typechain": "^8.1.0"
   },
   "dependencies": {
+    "@aave/protocol-v2": "^1.0.1",
     "@ethersproject/logger": "^5.7.0",
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.8.0-rc.1",
