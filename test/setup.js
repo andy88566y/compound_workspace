@@ -2,6 +2,7 @@ const { ethers } = require("hardhat");
 const { int } = require("hardhat/internal/core/params/argumentTypes");
 const { DEFAULT_FLAGS } = require("typechain");
 require("dotenv").config();
+const BigNumber = require("bignumber.js");
 const URL = process.env.URL;
 const OLD_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.5", 18);
 const NEW_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.3", 18);
@@ -13,6 +14,11 @@ const USDC_FAUCET_ADDRESS = "0xf977814e90da44bfa03b6295a0616a897441acec";
 const UNI_FAUCET_ADDRESS = "0x47173b170c64d16393a52e6c480b3ad8c302ba1e";
 const NEW_UNITOKEN_PRICE = (62n * DECIMAL) / 10n;
 const USDC_BORROW_AMOUNT = 5000n * USDC_DECIMAL;
+const CLOSE_FACTOR = ethers.utils.parseUnits("0.5", 18);
+// Price For USDC DECIMAL
+const USDCTOKEN_PRICE = 1n * DECIMAL * 10n ** 12n;
+const UNITOKEN_PRICE = 10n * DECIMAL;
+const ORIGINAL_USER2_USDC_AMOUNT = 10000n * USDC_DECIMAL;
 
 async function deployContractsFixture() {
 	hardhatReset();
@@ -75,7 +81,7 @@ async function deployBorrowFixture() {
 		.connect(user1)
 		.enterMarkets([cCat.address, cDragon.address]);
 	// 設定 CloseFactor 最高可清算比例 50%
-	await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
+	await comptroller._setCloseFactor(CLOSE_FACTOR);
 
 	// 設定清算人的激勵費 10%，這是清算者從被清算者身上拿的
 	// 獎勵 10% 要寫成 110%
@@ -109,12 +115,9 @@ async function deployFlashLoanFixture() {
 	const { usdc, uni } = await transferCoinsToOwnerAndUser();
 	comptroller = await deployComptroller();
 	interestRateModel = await deployInterestRateModel();
-	cUSDC = await deployCToken(usdc, comptroller, interestRateModel);
-	cUNI = await deployCToken(uni, comptroller, interestRateModel);
+	let cUSDC = await deployCToken(usdc, comptroller, interestRateModel);
+	let cUNI = await deployCToken(uni, comptroller, interestRateModel);
 
-	// Price For USDC DECIMAL
-	const USDCTOKEN_PRICE = 1n * DECIMAL * 10n ** 12n;
-	const UNITOKEN_PRICE = 10n * DECIMAL;
 	priceOracle = await deployPriceOracle();
 	await priceOracle.setUnderlyingPrice(cUSDC.address, USDCTOKEN_PRICE);
 	await priceOracle.setUnderlyingPrice(cUNI.address, UNITOKEN_PRICE);
@@ -130,7 +133,7 @@ async function deployFlashLoanFixture() {
 	//set collateral factor to 50%
 	await comptroller._setCollateralFactor(cUNI.address, OLD_COLLATERAL_FACTOR);
 	// 設定 CloseFactor 最高可清算比例 50%
-	await comptroller._setCloseFactor(ethers.utils.parseUnits("0.5", 18));
+	await comptroller._setCloseFactor(CLOSE_FACTOR);
 	// 清算獎勵
 	await comptroller._setLiquidationIncentive(
 		ethers.utils.parseUnits("1.1", 18)
@@ -214,8 +217,109 @@ async function deployFlashLoanUNIPriceDropFixture() {
 	};
 }
 
+async function deployFlashLoanLiquadateFixture() {
+	const {
+		owner,
+		user1,
+		user2,
+		usdc,
+		uni,
+		cUSDC,
+		cUNI,
+		comptroller,
+		priceOracle,
+	} = await deployFlashLoanUNIPriceDropFixture();
+
+	// console.log("1");
+	const result = await comptroller.getAccountLiquidity(user1.address);
+	shortfall = result[2];
+	// shortfall of borrow token
+	// 是多借了多少 usdc 的意思
+	// Account Liquidity represents the USD value borrowable by a user, so is shortfall
+	// shortfall represents negative liquidity (by USD value)
+	// console.log("2");
+	// console.log(`shortfall: ${shortfall} ${typeof shortfall}`);
+	// console.log(
+	// 	`BigNumber(shortfall): ${BigNumber(shortfall.toString()).toString()}`
+	// );
+	// console.log(`usdc.price: ${USDCTOKEN_PRICE} ${typeof USDCTOKEN_PRICE}`);
+	let bUSDCTOKEN_PRICE = BigNumber(USDCTOKEN_PRICE);
+	// console.log(
+	// 	`bUSDCTOKEN_PRICE: ${bUSDCTOKEN_PRICE} ${typeof bUSDCTOKEN_PRICE}`
+	// );
+	// console.log(`CLOSE_FACTOR: ${CLOSE_FACTOR} ${typeof CLOSE_FACTOR}`);
+
+	// repayAmount 是 shortfall / USDC_PRICE * CLOSE_FACTOR
+	// 欠款的 USDC 量 * USDC 單價 * 可清算比例
+	const repayAmount = BigNumber(shortfall.toString())
+		.dividedBy(BigNumber(USDCTOKEN_PRICE.toString()))
+		.multipliedBy(BigNumber(CLOSE_FACTOR.toString()));
+
+	// console.log(`repayAmount: ${repayAmount.toString()}, ${typeof repayAmount}`);
+
+	// console.log("4");
+	// console.log(`balances of user1:`);
+	// console.log(`USDC: ${await usdc.balanceOf(user1.address)}`);
+	// console.log(`cUSDC: ${await cUSDC.balanceOf(user1.address)}`);
+	// console.log(`UNI: ${await uni.balanceOf(user1.address)}`);
+	// console.log(`cUNI: ${await cUNI.balanceOf(user1.address)}`);
+
+	// console.log(`balances of user2:`);
+	// console.log(`USDC: ${await usdc.balanceOf(user2.address)}`);
+	// console.log(`cUSDC: ${await cUSDC.balanceOf(user2.address)}`);
+	// console.log(`UNI: ${await uni.balanceOf(user2.address)}`);
+	// console.log(`cUNI: ${await cUNI.balanceOf(user2.address)}`);
+
+	await usdc.connect(user2).approve(cUSDC.address, repayAmount.toString());
+	await cUSDC
+		.connect(user2)
+		.liquidateBorrow(user1.address, repayAmount.toString(), cUNI.address);
+
+	// console.log("after user2 liquidateBorrow user1");
+	// console.log(`balances of user1:`);
+	// console.log(`USDC: ${await usdc.balanceOf(user1.address)}`);
+	// console.log(`cUSDC: ${await cUSDC.balanceOf(user1.address)}`);
+	// console.log(`UNI: ${await uni.balanceOf(user1.address)}`);
+	// console.log(`cUNI: ${await cUNI.balanceOf(user1.address)}`);
+
+	// console.log(`balances of user2:`);
+	// console.log(`USDC: ${await usdc.balanceOf(user2.address)}`);
+	// console.log(`cUSDC: ${await cUSDC.balanceOf(user2.address)}`);
+	// console.log(`UNI: ${await uni.balanceOf(user2.address)}`);
+	// console.log(`cUNI: ${await cUNI.balanceOf(user2.address)}`);
+
+	let redeemAmount = await cUNI.balanceOf(user2.address);
+	await cUNI.connect(user2).redeemUnderlying(redeemAmount);
+
+	// console.log("after user2 redeemUnderlying cUNI to UNI");
+	// console.log(`balances of user2:`);
+	// console.log(`USDC: ${await usdc.balanceOf(user2.address)}`);
+	// console.log(`cUSDC: ${await cUSDC.balanceOf(user2.address)}`);
+	// console.log(`UNI: ${await uni.balanceOf(user2.address)}`);
+	// console.log(`cUNI: ${await cUNI.balanceOf(user2.address)}`);
+
+	// console.log("after user2 swap UNI to USDC");
+	// console.log(`balances of user2:`);
+	// console.log(`USDC: ${await usdc.balanceOf(user2.address)}`);
+	// console.log(`cUSDC: ${await cUSDC.balanceOf(user2.address)}`);
+	// console.log(`UNI: ${await uni.balanceOf(user2.address)}`);
+	// console.log(`cUNI: ${await cUNI.balanceOf(user2.address)}`);
+
+	return {
+		owner,
+		user1,
+		user2,
+		usdc,
+		uni,
+		cUSDC,
+		cUNI,
+		comptroller,
+		priceOracle,
+	};
+}
+
 async function transferCoinsToOwnerAndUser() {
-	const [owner, user1] = await ethers.getSigners();
+	const [owner, user1, user2] = await ethers.getSigners();
 
 	const usdc = await ethers.getContractAt("ERC20", USDC_ADDRESS);
 	await hre.network.provider.request({
@@ -225,6 +329,9 @@ async function transferCoinsToOwnerAndUser() {
 
 	const usdcFaucet = await ethers.getSigner(USDC_FAUCET_ADDRESS);
 	await usdc.connect(usdcFaucet).transfer(owner.address, 10000n * USDC_DECIMAL);
+	await usdc
+		.connect(usdcFaucet)
+		.transfer(user2.address, ORIGINAL_USER2_USDC_AMOUNT);
 
 	const uni = await ethers.getContractAt("ERC20", UNI_ADDRESS);
 	await hre.network.provider.request({
@@ -328,6 +435,7 @@ module.exports = {
 	deployFlashLoanFixture,
 	deployFlashLoanBorrowedFixture,
 	deployFlashLoanUNIPriceDropFixture,
+	deployFlashLoanLiquadateFixture,
 	OLD_COLLATERAL_FACTOR,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
@@ -337,4 +445,5 @@ module.exports = {
 	USDC_DECIMAL,
 	USDC_BORROW_AMOUNT,
 	NEW_UNITOKEN_PRICE,
+	ORIGINAL_USER2_USDC_AMOUNT,
 };

@@ -13,12 +13,14 @@ const {
 	deployFlashLoanFixture,
 	deployFlashLoanBorrowedFixture,
 	deployFlashLoanUNIPriceDropFixture,
+	deployFlashLoanLiquadateFixture,
 	NEW_COLLATERAL_FACTOR,
 	DECIMAL,
 	USDC_DECIMAL,
 	DEFAULT_BLOCKNUMBER,
 	NEW_UNITOKEN_PRICE,
 	USDC_BORROW_AMOUNT,
+	ORIGINAL_USER2_USDC_AMOUNT,
 } = require("./setup");
 
 const { LogLevel, Logger } = require("@ethersproject/logger");
@@ -268,6 +270,8 @@ describe("FlashLoan", async function () {
 		// 結果 UNI 價格掉落到 $6.2，總抵押價值剩下 6,200
 		// 最多只能借 6,200 * 50% = 3,100
 		// shortfall 會是 $1900
+		//
+		// 以上的價值都是 USD 計價
 		const { comptroller, user1, cUNI, priceOracle } = await loadFixture(
 			deployFlashLoanUNIPriceDropFixture
 		);
@@ -286,11 +290,16 @@ describe("FlashLoan", async function () {
 		expect(shortfall).to.eq(1900n * DECIMAL);
 	});
 
-	it("user2 can liquadte user1", async function () {});
+	it("user2 can liquadte user1, get right amount of UNI", async function () {
+		const { uni, user2 } = await loadFixture(deployFlashLoanLiquadateFixture);
+		const result = await uni.balanceOf(user2.address);
+
+		expect(result).to.eq(163829032258064516129n);
+	});
 
 	it("將 UNI 價格改為 $6.2, user2 use AAVE 的 Flash loan 來清算 User1", async function () {
 		const { owner, user1, user2 } = await loadFixture(
-			deployFlashLoanBorrowedFixture
+			deployFlashLoanLiquadateUsingContractFixture
 		);
 		// 清算 50% 後是不是大約可以賺 121 USD
 	});
